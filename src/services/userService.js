@@ -284,6 +284,97 @@ export const uploadProfilePhoto = async (userId, fileOrDataUrl) => {
   }
 };
 
+// Update existing user's profile photo using PUT endpoint
+export const updateProfilePhoto = async (userId, fileOrDataUrl) => {
+  if (!userId) throw new Error("userId is required");
+
+  const url = `${API_URL}/UpdateProfilePhoto`;
+  const form = new FormData();
+  form.append("userId", String(userId));
+
+  // helper: convert base64/dataURL to Blob
+  const dataUrlToBlob = (dataUrl) => {
+    const arr = dataUrl.split(",");
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
+
+  let fileToSend = fileOrDataUrl;
+  if (typeof fileOrDataUrl === "string" && fileOrDataUrl.startsWith("data:")) {
+    fileToSend = dataUrlToBlob(fileOrDataUrl);
+  }
+
+  if (fileToSend instanceof Blob || fileToSend instanceof File) {
+    // Name the file so backend can infer extension if needed
+    const filename = `profile_${userId}${
+      fileToSend.type ? `.${fileToSend.type.split("/").pop()}` : ""
+    }`;
+    form.append("file", fileToSend, filename);
+  } else {
+    throw new Error("fileOrDataUrl must be a File/Blob or data URL string");
+  }
+
+  const resp = await fetch(url, {
+    method: "PUT",
+    body: form,
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => null);
+    throw new Error(
+      `Failed to update profile photo: ${resp.status} ${txt || resp.statusText}`
+    );
+  }
+
+  const cacheBuster = Date.now();
+
+  try {
+    const payload = await resp.json();
+    // backend returns { message: "...", filePath: "..." }
+    const filePath = payload?.filePath || null;
+    return { filePath, cacheBuster };
+  } catch (e) {
+    return { filePath: null, cacheBuster };
+  }
+};
+
+// Delete user's profile photo using DELETE endpoint
+export const deleteProfilePhoto = async (userId) => {
+  if (!userId) throw new Error("userId is required");
+
+  const url = `${API_URL}/DeleteProfile/${userId}`;
+
+  const resp = await fetch(url, {
+    method: "DELETE",
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => null);
+    throw new Error(
+      `Failed to delete profile photo: ${resp.status} ${txt || resp.statusText}`
+    );
+  }
+
+  const cacheBuster = Date.now();
+
+  try {
+    const message = await resp.text();
+    return { success: true, message, cacheBuster };
+  } catch (e) {
+    return {
+      success: true,
+      message: "Profile photo deleted successfully.",
+      cacheBuster,
+    };
+  }
+};
+
 export const createUser = async (userData) => {
   // If caller provided a File/Blob or data URL for `ProfilePicture`,
   // we must first create the user, then upload the photo using
@@ -380,14 +471,14 @@ export const createUser = async (userData) => {
 
 export const updateUser = async (userID, userData) => {
   let profilePhotoVersion = null;
-  // If caller provided a data URL for the profile picture, upload it first
+  // If caller provided a data URL for the profile picture, upload it using the UPDATE endpoint
   if (
     userData &&
     typeof userData.ProfilePicture === "string" &&
     userData.ProfilePicture.startsWith("data:")
   ) {
     try {
-      const uploadResult = await uploadProfilePhoto(
+      const uploadResult = await updateProfilePhoto(
         userID,
         userData.ProfilePicture
       );

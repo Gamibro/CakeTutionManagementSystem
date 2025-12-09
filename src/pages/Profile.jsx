@@ -319,6 +319,11 @@ const Profile = () => {
               <div className="flex justify-center mb-4 sm:mb-5">
                 <div className="relative inline-block">
                   <Avatar
+                    key={`avatar-${user?.UserID || user?.id}-${
+                      user?.ProfilePictureVersion ||
+                      user?.profilePictureVersion ||
+                      ""
+                    }`}
                     name={displayName}
                     user={user}
                     src={user?.ProfilePicture || user?.profilePicture}

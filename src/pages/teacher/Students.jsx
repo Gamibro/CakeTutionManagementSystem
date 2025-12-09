@@ -16,7 +16,10 @@ import {
   deleteUser,
   getUserById,
 } from "../../services/userService";
-import { uploadProfilePhoto } from "../../services/userService";
+import {
+  uploadProfilePhoto,
+  updateProfilePhoto,
+} from "../../services/userService";
 import {
   createStudent,
   updateStudent,
@@ -29,7 +32,10 @@ import {
   getEnrollmentsByStudent,
   deleteEnrollment,
 } from "../../services/enrollmentService";
-import { getStudentCourses, deleteTeacherCourse } from "../../services/courseService";
+import {
+  getStudentCourses,
+  deleteTeacherCourse,
+} from "../../services/courseService";
 import Loader from "../../components/common/Loader";
 import CoursePickerModal from "../../components/courses/CoursePickerModal";
 import ClassPickerModal from "../../components/classes/ClassPickerModal";
@@ -1592,7 +1598,7 @@ const TeacherStudents = () => {
           UserTypeID: 3,
         });
 
-        // If a new profile photo was supplied (data URL), upload it
+        // If a new profile photo was supplied (data URL), upload it using UPDATE endpoint
         const photoToUpload =
           formData?.ProfilePicture || formData?.profilepicture || null;
         if (
@@ -1601,7 +1607,7 @@ const TeacherStudents = () => {
           photoToUpload.startsWith("data:")
         ) {
           try {
-            const uploadResult = await uploadProfilePhoto(uid, photoToUpload);
+            const uploadResult = await updateProfilePhoto(uid, photoToUpload);
             const uploadedPath = uploadResult?.filePath;
             const cacheBuster = uploadResult?.cacheBuster;
             if (uploadedPath) {
@@ -1755,7 +1761,6 @@ const TeacherStudents = () => {
 
             if (!desiredSet.has(courseIdStr)) {
               if (enrollment.EnrollmentID != null) {
-
                 try {
                   const numericCourseId = toApiId(courseIdStr);
                   if (teacherId && isCourseInScope(courseIdStr)) {
@@ -1766,9 +1771,9 @@ const TeacherStudents = () => {
                 } catch (e) {
                   await deleteEnrollment(enrollment.EnrollmentID);
                 }
-// =======
-//                 await deleteEnrollment(enrollment.EnrollmentID);
-// >>>>>>> main
+                // =======
+                //                 await deleteEnrollment(enrollment.EnrollmentID);
+                // >>>>>>> main
               }
               continue;
             }
@@ -1880,7 +1885,9 @@ const TeacherStudents = () => {
                   if (teacherId && isCourseInScope(courseIdStr)) {
                     await deleteTeacherCourse(teacherId, numericCourseId);
                   } else {
-                    await deleteEnrollment(currentEntry.courseOnly.EnrollmentID);
+                    await deleteEnrollment(
+                      currentEntry.courseOnly.EnrollmentID
+                    );
                   }
                 } catch (e) {
                   await deleteEnrollment(currentEntry.courseOnly.EnrollmentID);
@@ -1926,6 +1933,15 @@ const TeacherStudents = () => {
             "User updated, but failed to update student details"
         );
       }
+
+      // Update students list with the latest data from editUser (which has profile pic updates from step 1)
+      setStudents((prev) =>
+        prev.map((s) => {
+          const currentUserId = s.UserID || s.id;
+          const updatedUserId = editUser.UserID || editUser.id;
+          return currentUserId === updatedUserId ? editUser : s;
+        })
+      );
 
       await refreshStudents();
       setEditCourseClassAssignments({});
@@ -2037,7 +2053,7 @@ const TeacherStudents = () => {
         )}
       </AnimatePresence> */}
 
-       <AnimatePresence>
+      <AnimatePresence>
         {isCreateOpen && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -2336,7 +2352,13 @@ const TeacherStudents = () => {
                   showCoreFields={editStep === 1}
                   showRoleFields={editStep === 2}
                   showEnrolledOnly={editMode === "add"}
-                  submitLabel={editMode === "add" ? "Add" : editStep === 1 ? "Next" : "Update"}
+                  submitLabel={
+                    editMode === "add"
+                      ? "Add"
+                      : editStep === 1
+                      ? "Next"
+                      : "Update"
+                  }
                   {...(editStep > 1
                     ? {
                         onBack: () =>

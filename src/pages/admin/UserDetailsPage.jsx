@@ -5,7 +5,11 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 
 import { useAuth } from "../../contexts/AuthContext";
-import { getUserById, updateUser } from "../../services/userService";
+import {
+  getUserById,
+  updateUser,
+  updateProfilePhoto,
+} from "../../services/userService";
 import {
   getTeacherCourses,
   getStudentCourses,
@@ -1426,6 +1430,9 @@ const UserDetailsPage = ({
         <Card className="p-5 sm:p-6">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             <Avatar
+              key={`avatar-${user.UserID || user.id}-${
+                user.ProfilePictureVersion || user.profilePictureVersion || ""
+              }`}
               name={fullName || user.Username || user.username}
               size="lg"
               src={user.ProfilePicture || user.profilePicture || undefined}

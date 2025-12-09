@@ -7,6 +7,7 @@ import {
   getUserById,
   deleteUser,
   uploadProfilePhoto,
+  updateProfilePhoto,
 } from "../../services/userService";
 import {
   createStudent,
@@ -1424,7 +1425,7 @@ const AdminUsers = () => {
           // Step 1: update core details only
           const updatedUser = await updateUser(userId, userData);
 
-          // If the user included a new photo (data URL), upload it separately
+          // If the user included a new photo (data URL), upload it separately using UPDATE endpoint
           const photoToUpload = userData?.ProfilePicture || null;
           if (
             photoToUpload &&
@@ -1432,7 +1433,7 @@ const AdminUsers = () => {
             photoToUpload.startsWith("data:")
           ) {
             try {
-              const uploadResult = await uploadProfilePhoto(
+              const uploadResult = await updateProfilePhoto(
                 userId,
                 photoToUpload
               );
@@ -2167,6 +2168,15 @@ const AdminUsers = () => {
               "User updated, but failed to update role-specific details"
           );
         }
+
+        // Update users list with the latest data from selectedUser (which has profile pic updates from step 1)
+        setUsers(
+          users.map((user) => {
+            const currentUserId = user.UserID || user.id;
+            const updatedUserId = selectedUser.UserID || selectedUser.id;
+            return currentUserId === updatedUserId ? selectedUser : user;
+          })
+        );
 
         setShowModal(false);
         setSelectedUser(null);

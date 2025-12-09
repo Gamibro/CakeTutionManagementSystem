@@ -112,7 +112,16 @@ const UserList = ({
                   <td className="px-4 py-4 whitespace-nowrap align-top">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <Avatar name={fullName} size="sm" user={user} />
+                        <Avatar
+                          key={`avatar-${user.UserID || user.id}-${
+                            user.ProfilePictureVersion ||
+                            user.profilePictureVersion ||
+                            ""
+                          }`}
+                          name={fullName}
+                          size="sm"
+                          user={user}
+                        />
                       </div>
                       <div className="ml-3">
                         {detailPath ? (
@@ -141,80 +150,127 @@ const UserList = ({
                   {/* Identifier column removed per request */}
                   <td className="px-4 py-4 whitespace-nowrap align-top text-right text-sm font-medium">
                     <div className="inline-flex items-center gap-2">
-                      {allowManage && (() => {
-                        const isActive = Boolean(user.IsActive ?? user.isActive ?? true);
-                        return (
-                          <>
-                            {allowManage && isStudent && (
-                              <button
-                                onClick={() => {
-                                  if (onAddStudent) {
+                      {allowManage &&
+                        (() => {
+                          const isActive = Boolean(
+                            user.IsActive ?? user.isActive ?? true
+                          );
+                          return (
+                            <>
+                              {allowManage && isStudent && (
+                                <button
+                                  onClick={() => {
+                                    if (onAddStudent) {
+                                      try {
+                                        onAddStudent(actionId ?? undefined, {
+                                          mode: "add",
+                                        });
+                                      } catch (e) {
+                                        // ignore
+                                      }
+                                    } else {
+                                      onEdit && actionId && onEdit(actionId);
+                                    }
+                                  }}
+                                  title="Add"
+                                  className="inline-flex items-center justify-center w-9 h-9 rounded-md text-green-600 hover:text-green-800"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                    className="w-5 h-5"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+
+                              {isActive && (
+                                <button
+                                  onClick={() => {
                                     try {
-                                      onAddStudent(actionId ?? undefined, { mode: "add" });
+                                      if (rolePrefix === "T" && actionId) {
+                                        const obj = {
+                                          id: String(actionId),
+                                          name: fullName,
+                                        };
+                                        window.localStorage.setItem(
+                                          "selected_teacher_for_course",
+                                          JSON.stringify(obj)
+                                        );
+                                      }
                                     } catch (e) {
-                                      // ignore
+                                      // ignore storage errors
                                     }
-                                  } else {
                                     onEdit && actionId && onEdit(actionId);
+                                  }}
+                                  title="Edit"
+                                  className="inline-flex items-center justify-center w-9 h-9 rounded-md text-indigo-600 hover:text-indigo-800 dark:text-indigo-400"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.213l-4 1 1-4L16.862 3.487z"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+
+                              {!isActive && onActivate && (
+                                <button
+                                  onClick={() =>
+                                    onActivate &&
+                                    actionId &&
+                                    onActivate(actionId)
                                   }
-                                }}
-                                title="Add"
-                                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-green-600 hover:text-green-800"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                                </svg>
-                              </button>
-                            )}
+                                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-green-600 hover:text-green-800"
+                                >
+                                  Active
+                                </button>
+                              )}
 
-                            {isActive && (
-                              <button
-                                onClick={() => {
-                                  try {
-                                    if (rolePrefix === "T" && actionId) {
-                                      const obj = { id: String(actionId), name: fullName };
-                                      window.localStorage.setItem(
-                                        "selected_teacher_for_course",
-                                        JSON.stringify(obj)
-                                      );
-                                    }
-                                  } catch (e) {
-                                    // ignore storage errors
+                              {isActive && onDeactivate && (
+                                <button
+                                  onClick={() =>
+                                    onDeactivate &&
+                                    actionId &&
+                                    onDeactivate(actionId)
                                   }
-                                  onEdit && actionId && onEdit(actionId);
-                                }}
-                                title="Edit"
-                                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-indigo-600 hover:text-indigo-800 dark:text-indigo-400"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.213l-4 1 1-4L16.862 3.487z" />
-                                </svg>
-                              </button>
-                            )}
-
-                            {!isActive && onActivate && (
-                              <button
-                                onClick={() => onActivate && actionId && onActivate(actionId)}
-                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-green-600 hover:text-green-800"
-                              >
-                                Active
-                              </button>
-                            )}
-
-                            {isActive && onDeactivate && (
-                              <button
-                                onClick={() => onDeactivate && actionId && onDeactivate(actionId)}
-                                title="Remove"
-                                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-orange-600 hover:text-orange-800"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            )}
-                          </>
-                        );
-                      })()}
+                                  title="Remove"
+                                  className="inline-flex items-center justify-center w-9 h-9 rounded-md text-orange-600 hover:text-orange-800"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M6 18L18 6M6 6l12 12"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                            </>
+                          );
+                        })()}
                     </div>
                   </td>
                 </tr>
