@@ -3459,112 +3459,20 @@ const CourseView = () => {
     return <Loader className="py-12" />;
   }
 
-  // const isStudentUser = user?.userType === "student";
-
   const subjects = Array.isArray(course.subjects)
     ? course.subjects
     : course.subject
     ? [course.subject]
     : [];
-
-  // Total students for stats:
-  // - For admins/teachers: uses `students.length` (existing behavior)
-  // - For students: falls back to unique students from `subjectStudentGroups` (StudentsBySubject),
-  //   but still scoped to this course because you already filtered with belongsToCurrentCourse earlier.
-  let totalStudentsForStats = students.length;
-
-  if (
-    isStudentUser &&
-    Array.isArray(subjectStudentGroups) &&
-    subjectStudentGroups.length
-  ) {
-    const idSet = new Set();
-    subjectStudentGroups.forEach((group) => {
-      (group.students || []).forEach((entry) => {
-        const sid = resolveStudentId(entry);
-        if (sid) idSet.add(sid);
-      });
-    });
-    if (idSet.size > 0) {
-      totalStudentsForStats = idSet.size;
-    }
-  }
-
-  // Available classes = how many classes are under this course
-  const availableClassesCount = (() => {
-    if (Array.isArray(courseSubjectOptions) && courseSubjectOptions.length) {
-      return courseSubjectOptions.length;
-    }
-    return subjects.length;
-  })();
-
-  // Enrolled classes for the CURRENT logged in student in THIS course only
-  const enrolledClassesForStudent = (() => {
-    if (!isStudentUser) return [];
-
-    const currentStudentKey = resolveStudentId(user || {});
-    if (!currentStudentKey) return [];
-
-    const seen = new Set();
-    const enrolled = [];
-
-    if (!Array.isArray(subjectStudentGroups) || !subjectStudentGroups.length) {
-      return [];
-    }
-
-    subjectStudentGroups.forEach((group) => {
-      const groupStudents = Array.isArray(group.students) ? group.students : [];
-
-      const hasThisStudent = groupStudents.some((entry) => {
-        const sid = resolveStudentId(entry);
-        if (!sid || sid !== currentStudentKey) return false;
-        return resolveEnrollmentActive(entry); // only count ACTIVE enrollments
-      });
-
-      if (!hasThisStudent) return;
-
-      // Try to get a nice subject name
-      let name = group.subjectName || group.SubjectName || null;
-
-      let code = group.subjectCode || group.SubjectCode || "";
-
-      // If name is missing, try to resolve via subject id + courseSubjectOptions
-      if (!name) {
-        const rawId =
-          group.subjectId ??
-          group.SubjectID ??
-          group.SubjectId ??
-          group.id ??
-          group.Id ??
-          null;
-
-        const normalizedId = normalizeIdString(rawId);
-        if (normalizedId && courseSubjectOptionMap.has(normalizedId)) {
-          const opt = courseSubjectOptionMap.get(normalizedId);
-          name = opt.label || name;
-          if (!code && opt.code) {
-            code = opt.code;
-          }
-        }
-      }
-
-      if (!name) {
-        name = "Unnamed Class";
-      }
-
-      const key = name.trim().toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        enrolled.push({ name, code });
-      }
-    });
-
-    return enrolled;
-  })();
-
-  const enrolledClassCount = enrolledClassesForStudent.length;
-
-  const formattedSubjects = subjects.join(", ");
+  const visibleSubjects = isStudentUser
+    ? studentAssignedSubjectNames
+    : subjects;
+  const formattedSubjects = visibleSubjects.join(", ");
+  const classesCount =
+    classStatsEntries.length ||
+    (isStudentUser
+      ? studentAssignedSubjectNames.length
+      : visibleSubjects.length);
   const courseTeacherId = course?.teacherId;
   const hasTeacherAssignment =
     courseTeacherId !== undefined &&
@@ -3594,11 +3502,7 @@ const CourseView = () => {
 
   return (
     <div
-      className={`flex flex-col ${
-        isStudentUser
-          ? "min-h-[calc(100vh-120px)] w-full max-w-5xl mx-auto px-5 py-6 md:px-10 md:py-8 space-y-4"
-          : "p-1 md:p-1"
-      } rounded-xl shadow-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700`}
+      className={`relative flex flex-col p-1 md:p-1 rounded-xl shadow-md h-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700`}
     >
       {/* Alert System */}
       {showAlert && (
@@ -3627,7 +3531,7 @@ const CourseView = () => {
       />
 
       {/* Header Section */}
-      {/* <div className="mt-2 mb-3 md:mb-5">
+      <div className="mt-2 mb-3 md:mb-5">
         <div className="flex items-center justify-between mb-1 md:mb-2">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow">
@@ -3672,155 +3576,66 @@ const CourseView = () => {
             )}
             <span className={statusBadgeClassName}>{statusBadgeLabel}</span>
           </div>
-        </div> */}
-
-      {/* Header Section */}
-     <div
-  className={`${
-    isStudentUser ? "mt-6 mb-6 w-full max-w-4xl mx-auto" : "mt-4 mb-5"
-  }`}
->
-  <div className="flex items-center justify-between mb-10">
-    {/* LEFT: icon + title + code/subjects */}
-    <div className="flex items-center gap-2">
-      <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg shadow">
-        <FiBook className="w-4 h-4 text-white" />
-      </div>
-      <div>
-        <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-          {course.name}
-        </h1>
-        <p className="text-xs text-gray-600 dark:text-gray-400">
-          {course.code} {formattedSubjects && `• ${formattedSubjects}`}
-        </p>
-      </div>
-    </div>
-
-    {/* RIGHT: Edit button (if admin) + status badge */}
-    <div className="flex items-center gap-2">
-      {isAdmin && (
-        <button
-          onClick={() => setShowEditModal(true)}
-          className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm"
-        >
-          <FiEdit className="w-4 h-4" /> Edit Course
-        </button>
-      )}
-      <span className={statusBadgeClassName}>{statusBadgeLabel}</span>
-    </div>
-  </div>
+        </div>
 
         {/* Stats Cards */}
-        {isStudentUser ? (
-          // Stats for STUDENT user
-          <div className="w-full max-w-4xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-3 md:mb-4">
-              {/* Total Students */}
-              <div className="rounded-xl p-3 md:p-4 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600 min-h-[88px]">
-                <div className="flex items-center justify-between h-full">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Total Students
-                    </p>
-                    <p className="text-sm md:text-base font-bold text-indigo-600 dark:text-indigo-400 mt-1">
-                      {totalStudentsForStats}
-                    </p>
-                  </div>
-                  <FiUsers className="w-5 h-5 md:w-6 md:h-6 text-indigo-600 dark:text-indigo-400" />
-                </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2 mb-1 md:mb-2">
+          <div className="rounded-lg p-2 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Total Students
+                </p>
+                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                  {students.length}
+                </p>
               </div>
-
-              {/* Available Classes */}
-              <div className="rounded-xl p-3 md:p-4 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600 min-h-[88px]">
-                <div className="flex items-center justify-between h-full">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Available Classes
-                    </p>
-                    <p className="text-sm md:text-base font-bold text-amber-600 dark:text-amber-400 mt-1">
-                      {availableClassesCount}
-                    </p>
-                  </div>
-                  <FiBook className="w-5 h-5 md:w-6 md:h-6 text-amber-600 dark:text-amber-400" />
-                </div>
-              </div>
-
-              {/* Enrolled Classes */}
-              <div className="rounded-xl p-3 md:p-4 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600 min-h-[88px]">
-                <div className="flex items-center justify-between h-full">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Enrolled Classes
-                    </p>
-                    <p className="text-sm md:text-base font-bold text-green-600 dark:text-green-400 mt-1">
-                      {enrolledClassCount}
-                    </p>
-                  </div>
-                  <FiUserCheck className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
+              <FiUsers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </div>
           </div>
-        ) : (
-          // Existing stats for ADMIN / TEACHER
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2 mb-1 md:mb-2">
-            <div className="rounded-lg p-2 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Total Students
-                  </p>
-                  <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                    {totalStudentsForStats}
-                  </p>
-                </div>
-                <FiUsers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <div className="rounded-lg p-2 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Active
+                </p>
+                <p className="text-sm font-bold text-green-600 dark:text-green-400">
+                  {activeStudents.length}
+                </p>
               </div>
-            </div>
-            <div className="rounded-lg p-2 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Active
-                  </p>
-                  <p className="text-sm font-bold text-green-600 dark:text-green-400">
-                    {activeStudents.length}
-                  </p>
-                </div>
-                <FiUserCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-            <div className="rounded-lg p-2 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Inactive
-                  </p>
-                  <p className="text-sm font-bold text-red-600 dark:text-red-400">
-                    {inactiveStudents.length}
-                  </p>
-                </div>
-                <FiUserX className="w-4 h-4 text-red-600 dark:text-red-400" />
-              </div>
-            </div>
-            <div className="rounded-lg p-2 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Classes
-                  </p>
-                  <p className="text-sm font-bold text-amber-600 dark:text-amber-400">
-                    {subjects.length}
-                  </p>
-                </div>
-                <FiBook className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              </div>
+              <FiUserCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
             </div>
           </div>
-        )}
+          <div className="rounded-lg p-2 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Inactive
+                </p>
+                <p className="text-sm font-bold text-red-600 dark:text-red-400">
+                  {inactiveStudents.length}
+                </p>
+              </div>
+              <FiUserX className="w-4 h-4 text-red-600 dark:text-red-400" />
+            </div>
+          </div>
+          <div className="rounded-lg p-2 shadow border bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Classes
+                </p>
+                <p className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                  {classesCount}
+                </p>
+              </div>
+              <FiBook className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+        </div>
 
         {/* Course Details */}
-        {/* <div className="rounded-lg p-3 border bg-gray-50 dark:bg-gray-700/30 border-gray-200 dark:border-gray-600 mb-2">
+        <div className="rounded-lg p-3 border bg-gray-50 dark:bg-gray-700/30 border-gray-200 dark:border-gray-600 mb-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
@@ -3852,58 +3667,10 @@ const CourseView = () => {
                   : "No teacher assigned"}
               </p>
             </div>
-            <div>
-              {isStudentUser && (
-              <div className="mt-2">
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
-                  Enrolled Classes
-                </p>
 
-                {enrolledClassesForStudent.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {enrolledClassesForStudent.map((cls) => (
-                      <span
-                        key={`${cls.name}-${cls.code || "nocode"}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-700"
-                      >
-                        <FiBook className="w-3 h-3" />
-                        <span>{cls.name}</span>
-                        {cls.code && (
-                          <span className="opacity-70 text-[0.7rem]">
-                            ({cls.code})
-                          </span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    You are not enrolled in any class for this course yet.
-                  </p>
-                )}
-              </div>
-            )}
-
-            </div>
-             
-          </div>
-        </div> */}
-
-        <div
-          className={`border bg-gray-50 dark:bg-gray-700/30 border-gray-200 dark:border-gray-600 ${
-            isStudentUser
-              ? "w-full max-w-4xl mx-auto rounded-xl p-4 md:p-5 mb-5 min-h-[180px]"
-              : "rounded-lg p-3 mb-2"
-          }`}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            {/* Description */}
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Description
-              </p>
-              <p className="text-gray-900 dark:text-white">
-                {course.description || "No description"}
+                Classes
               </p>
               {classStatsEntries.length ? (
                 <div className="flex flex-wrap gap-2">
@@ -3945,83 +3712,6 @@ const CourseView = () => {
                 </p>
               )}
             </div>
-
-            {/* Academic Year */}
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Academic Year
-              </p>
-              <p className="text-gray-900 dark:text-white">
-                {course.academicYear || "Not specified"}
-              </p>
-            </div>
-
-            {/* Assigned Teacher + Enrolled Classes layout */}
-            {isStudentUser ? (
-              <>
-                {/* Left: Assigned Teacher */}
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    Assigned Teacher
-                  </p>
-                  <p className="text-gray-900 dark:text-white">
-                    {teacherLoading
-                      ? "Loading..."
-                      : hasTeacherAssignment
-                      ? teacher
-                        ? teacherDisplayName
-                        : "Teacher not available"
-                      : "No teacher assigned"}
-                  </p>
-                </div>
-
-                {/* Right: Enrolled Classes */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
-                    Enrolled Classes
-                  </p>
-
-                  {enrolledClassesForStudent.length ? (
-                    <div className="flex flex-wrap gap-2">
-                      {enrolledClassesForStudent.map((cls) => (
-                        <span
-                          key={`${cls.name}-${cls.code || "nocode"}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-700"
-                        >
-                          <FiBook className="w-3 h-3" />
-                          <span>{cls.name}</span>
-                          {cls.code && (
-                            <span className="opacity-70 text-[0.7rem]">
-                              ({cls.code})
-                            </span>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      You are not enrolled in any class for this course yet.
-                    </p>
-                  )}
-                </div>
-              </>
-            ) : (
-              // Non-students: keep teacher full width like before
-              <div className="md:col-span-2">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  Assigned Teacher
-                </p>
-                <p className="text-gray-900 dark:text-white">
-                  {teacherLoading
-                    ? "Loading..."
-                    : hasTeacherAssignment
-                    ? teacher
-                      ? teacherDisplayName
-                      : "Teacher not available"
-                    : "No teacher assigned"}
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>

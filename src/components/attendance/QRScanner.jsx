@@ -1036,8 +1036,8 @@ const QRScanner = () => {
           setStatus("error");
           setMessage(
             scheduleCourseLabel
-              ? `Student QR code does not include ${scheduleCourseLabel}.`
-              : "Student QR code does not include the selected course."
+              ? `Student is not enrolled for ${scheduleCourseLabel}.`
+              : "Student is not enrolled for the selected course."
           );
           setScanError(
             "The scanned QR does not list the course ID required by the chosen schedule."
@@ -1057,8 +1057,8 @@ const QRScanner = () => {
           setStatus("error");
           setMessage(
             scheduleSubjectLabel
-              ? `Student QR code does not include ${scheduleSubjectLabel}.`
-              : "Student QR code does not include the selected subject."
+              ? `Student is not enrolled for ${scheduleSubjectLabel}.`
+              : "Student is not enrolled for the selected subject."
           );
           setScanError(
             "The scanned QR does not list the subject ID required by this schedule."

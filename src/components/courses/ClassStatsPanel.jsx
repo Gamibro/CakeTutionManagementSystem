@@ -41,8 +41,8 @@ const ClassStatsPanel = ({ open, classInfo, onClose }) => {
   const hasRecordSummaries = safeRecords.length > 0;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 md:inset-auto md:top-24 md:right-4 md:bottom-auto md:w-80 md:px-0 lg:w-96">
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl overflow-hidden">
+   <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl overflow-hidden">
         <div className="flex items-start justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
