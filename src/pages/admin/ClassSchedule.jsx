@@ -55,7 +55,12 @@ const AdminClassSchedule = () => {
   const [schedules, setSchedules] = useState([]);
   const [view, setView] = useState("week");
   const [showCreate, setShowCreate] = useState(false);
-  const [filters, setFilters] = useState({ course: "", subject: "", room: "" });
+  const [filters, setFilters] = useState({
+    course: "",
+    subject: "",
+    room: "",
+    date: "",
+  });
   const [coursesList, setCoursesList] = useState([]);
   const [subjectsList, setSubjectsList] = useState([]);
   const [formCourseId, setFormCourseId] = useState("");
@@ -64,6 +69,9 @@ const AdminClassSchedule = () => {
   const [formStartTime, setFormStartTime] = useState("09:00");
   const [formEndTime, setFormEndTime] = useState("10:00");
   const [formRoomNumber, setFormRoomNumber] = useState("");
+  const [formClassDate, setFormClassDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [formIsRecurring, setFormIsRecurring] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
@@ -211,6 +219,8 @@ const AdminClassSchedule = () => {
         !String(s.roomNumber).toLowerCase().includes(filters.room.toLowerCase())
       )
         return false;
+      if (filters.date && !String(s.classDate || "").includes(filters.date))
+        return false;
       return true;
     });
   }, [schedules, filters]);
@@ -253,6 +263,7 @@ const AdminClassSchedule = () => {
       setFormStartTime(toTimeInputValue(editingSchedule.startTime));
       setFormEndTime(toTimeInputValue(editingSchedule.endTime, "10:00"));
       setFormRoomNumber(editingSchedule.roomNumber || "");
+      setFormClassDate(editingSchedule.classDate || "");
       setFormIsRecurring(Boolean(editingSchedule.isRecurring));
       setFormErrors({});
       setFormSubmitError(null);
@@ -264,6 +275,7 @@ const AdminClassSchedule = () => {
     setFormStartTime("09:00");
     setFormEndTime("10:00");
     setFormRoomNumber("");
+    setFormClassDate(new Date().toISOString().split("T")[0]);
     setFormIsRecurring(false);
     setFormErrors({});
     setFormSubmitError(null);
@@ -378,6 +390,7 @@ const AdminClassSchedule = () => {
       startTime: formStartTime,
       endTime: formEndTime,
       roomNumber: formRoomNumber,
+      classDate: formClassDate || null,
       isRecurring: formIsRecurring,
     };
 
@@ -458,6 +471,19 @@ const AdminClassSchedule = () => {
             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
+        <div className="flex flex-col">
+          <label className="text-xs font-medium mb-1 text-gray-500 uppercase tracking-wide">
+            Class Date
+          </label>
+          <input
+            type="date"
+            name="date"
+            value={filters.date}
+            onChange={handleInput}
+            placeholder="Search by date"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
         {/* <div className="flex flex-col">
           <label className="text-xs font-medium mb-1 text-gray-500 uppercase tracking-wide">
             Room
@@ -505,6 +531,9 @@ const AdminClassSchedule = () => {
                     </h2>
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {s.classDate && (
+                      <span className="font-medium">{s.classDate} • </span>
+                    )}
                     {dayNames[s.dayOfWeek]} • {formatTime(s.startTime)} –{" "}
                     {formatTime(s.endTime)}
                     {/* Room display intentionally commented out
@@ -689,7 +718,7 @@ const AdminClassSchedule = () => {
                                 background: gradient,
                                 borderLeft: `4px solid ${primary}`,
                               }}
-                              title={`${s.courseName} • ${
+                              title={`${s.classDate ? s.classDate + ' • ' : ''}${s.courseName} • ${
                                 s.subjectName
                               } • ${formatTime(s.startTime)} - ${formatTime(
                                 s.endTime
@@ -698,6 +727,11 @@ const AdminClassSchedule = () => {
                             >
                               <div className="flex items-center justify-between">
                                 <div>
+                                  {s.classDate && (
+                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">
+                                      {s.classDate}
+                                    </div>
+                                  )}
                                   <div className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">
                                     {s.courseName || `Course ${s.courseId}`}
                                   </div>
@@ -814,6 +848,18 @@ const AdminClassSchedule = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Class Date
+                </label>
+                <input
+                  type="date"
+                  name="classDate"
+                  value={formClassDate}
+                  onChange={(e) => setFormClassDate(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                />
               </div>
               {/* <div className="flex flex-col">
               <label className="text-xs font-medium mb-1 text-gray-500 uppercase tracking-wide">
@@ -946,6 +992,12 @@ const AdminClassSchedule = () => {
                   {dayNames[detailSchedule.dayOfWeek]}
                 </div>
               </div>
+              {detailSchedule.classDate && (
+                <div>
+                  <div className="text-xs text-gray-500">Class Date</div>
+                  <div className="font-medium">{detailSchedule.classDate}</div>
+                </div>
+              )}
               {/* <div>
                 <div className="text-xs text-gray-500">Room</div>
                 <div className="font-medium">{detailSchedule.roomNumber}</div>

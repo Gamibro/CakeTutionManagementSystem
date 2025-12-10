@@ -33,6 +33,8 @@ import Loader from "../../components/common/Loader";
 import CoursePickerModal from "../../components/courses/CoursePickerModal";
 import AttendanceList from "../../components/attendance/AttendanceList";
 import { getStudentAttendance } from "../../services/attendanceService";
+import ClassStatsPanel from "../../components/courses/ClassStatsPanel";
+import { FiLayers } from "react-icons/fi";
 // No direct CourseCard usage here because admin links differ from teacher view
 
 const InfoRow = ({ label, value }) => (
@@ -63,6 +65,26 @@ const normalizeKeyValue = (value) => {
     const parsed = Number(str);
     if (!Number.isNaN(parsed)) return parsed;
   }
+  return str;
+};
+
+const normalizeIdString = (value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const str = String(value).trim();
+  if (!str) {
+    return null;
+  }
+
+  if (/^-?\d+$/.test(str)) {
+    const asNumber = Number(str);
+    if (!Number.isNaN(asNumber)) {
+      return String(asNumber);
+    }
+  }
+
   return str;
 };
 
@@ -98,6 +120,8 @@ const UserDetailsPage = ({
   const [isAssignCoursesOpen, setIsAssignCoursesOpen] = useState(false);
   const [assigningCourses, setAssigningCourses] = useState(false);
   const [assignCoursesError, setAssignCoursesError] = useState("");
+  const [selectedClassKey, setSelectedClassKey] = useState(null);
+  const [isClassStatsOpen, setIsClassStatsOpen] = useState(false);
   const [isEnrollOpen, setIsEnrollOpen] = useState(false);
   const [enrollingCourses, setEnrollingCourses] = useState(false);
   const [enrollCoursesError, setEnrollCoursesError] = useState("");
@@ -706,6 +730,179 @@ const UserDetailsPage = ({
 
     return [];
   }, [enrolledClassSummaries, studentSubjects, enrolledSubjectsLoading]);
+
+  // Compute class stats entries for the ClassStatsPanel
+  const classStatsEntries = useMemo(() => {
+    if (
+      !isStudentUser ||
+      !enrolledClassSummaries ||
+      enrolledClassSummaries.length === 0
+    ) {
+      return [];
+    }
+
+    const entries = [];
+
+    enrolledClassSummaries.forEach((courseSummary, courseIndex) => {
+      const courseId = normalizeIdString(
+        courseSummary.courseId ??
+          courseSummary.CourseID ??
+          courseSummary.courseID ??
+          courseSummary.id
+      );
+
+      const courseName = String(
+        courseSummary.courseName ??
+          courseSummary.CourseName ??
+          courseSummary.name ??
+          ""
+      ).trim();
+
+      const subjects = Array.isArray(courseSummary.subjects)
+        ? courseSummary.subjects
+        : [];
+
+      subjects.forEach((subject, subjectIndex) => {
+        const subjectId = normalizeIdString(
+          subject.subjectId ??
+            subject.SubjectID ??
+            subject.subjectID ??
+            subject.id
+        );
+
+        const subjectName = String(
+          subject.subjectName ?? subject.SubjectName ?? subject.name ?? ""
+        ).trim();
+
+        if (!subjectName) return;
+
+        const entryKey =
+          subjectId || `${courseId || "course"}-${courseIndex}-${subjectIndex}`;
+        const label = subjectName;
+        const code = "";
+
+        // Get attendance records for this subject
+        const attendanceRecords = [];
+        let presentCount = 0;
+        let latestAttendanceDate = null;
+
+        if (Array.isArray(studentAttendance)) {
+          studentAttendance.forEach((record) => {
+            // Match by subject ID or name
+            const recordSubjectId = normalizeIdString(
+              record.SubjectID ?? record.subjectID ?? record.subjectId
+            );
+            const recordSubjectName = String(
+              record.SubjectName ?? record.subjectName ?? record.subject ?? ""
+            )
+              .trim()
+              .toLowerCase();
+
+            const matchesSubject =
+              (subjectId && recordSubjectId === subjectId) ||
+              (subjectName && recordSubjectName === subjectName.toLowerCase());
+
+            if (matchesSubject) {
+              const status = String(
+                record.Status ?? record.status ?? ""
+              ).toLowerCase();
+              const statusLabel =
+                status.charAt(0).toUpperCase() + status.slice(1);
+              const statusKey = status;
+
+              const attendanceDate =
+                record.Date ??
+                record.date ??
+                record.AttendanceDate ??
+                record.attendanceDate;
+
+              if (status === "present") {
+                presentCount++;
+              }
+
+              if (attendanceDate) {
+                const timestamp = new Date(attendanceDate).getTime();
+                if (Number.isFinite(timestamp)) {
+                  if (!latestAttendanceDate) {
+                    latestAttendanceDate = new Date(timestamp).toISOString();
+                  } else {
+                    const current = new Date(latestAttendanceDate).getTime();
+                    if (timestamp > current) {
+                      latestAttendanceDate = new Date(timestamp).toISOString();
+                    }
+                  }
+                }
+              }
+
+              attendanceRecords.push({
+                id:
+                  record.AttendanceID ??
+                  record.attendanceID ??
+                  record.attendanceId ??
+                  record.id,
+                title: `${courseName} - ${subjectName}`,
+                date: attendanceDate,
+                statusLabel,
+                statusKey,
+              });
+            }
+          });
+        }
+
+        const totalSessions = attendanceRecords.length;
+        const absentCount = Math.max(0, totalSessions - presentCount);
+
+        entries.push({
+          key: entryKey,
+          subjectId,
+          label,
+          code,
+          total: totalSessions,
+          present: presentCount,
+          absent: absentCount,
+          students: [],
+          records: attendanceRecords,
+          latestAttendanceDate,
+        });
+      });
+    });
+
+    return entries;
+  }, [isStudentUser, enrolledClassSummaries, studentAttendance]);
+
+  const selectedClassInfo = useMemo(() => {
+    if (!selectedClassKey || !classStatsEntries.length) {
+      return null;
+    }
+    return (
+      classStatsEntries.find((entry) => entry.key === selectedClassKey) || null
+    );
+  }, [selectedClassKey, classStatsEntries]);
+
+  const showClassStatsPanel =
+    Boolean(selectedClassInfo) && Boolean(isClassStatsOpen);
+
+  const handleClassChipClick = useCallback(
+    (entryKey) => {
+      if (!entryKey) {
+        return;
+      }
+
+      if (selectedClassKey === entryKey && isClassStatsOpen) {
+        setIsClassStatsOpen(false);
+        setSelectedClassKey(null);
+      } else {
+        setSelectedClassKey(entryKey);
+        setIsClassStatsOpen(true);
+      }
+    },
+    [selectedClassKey, isClassStatsOpen]
+  );
+
+  const handleCloseClassStats = useCallback(() => {
+    setIsClassStatsOpen(false);
+    setSelectedClassKey(null);
+  }, []);
 
   // <<<<<<< HEAD
   //   const studentClassName = useMemo(() => {
@@ -1368,6 +1565,12 @@ const UserDetailsPage = ({
 
   return (
     <div className="space-y-6">
+      <ClassStatsPanel
+        open={showClassStatsPanel}
+        classInfo={selectedClassInfo}
+        onClose={handleCloseClassStats}
+      />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <button
@@ -1600,7 +1803,7 @@ const UserDetailsPage = ({
               />
               <div>
                 <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Class
+                  Classes
                 </span>
                 <div className="mt-1 text-sm text-gray-900 dark:text-gray-100 space-y-1 break-words">
                   {enrolledSubjectsLoading ? (
@@ -1611,6 +1814,38 @@ const UserDetailsPage = ({
                     <span className="text-red-600 dark:text-red-400">
                       {enrolledSubjectsError}
                     </span>
+                  ) : classStatsEntries.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {classStatsEntries.map((entry) => {
+                        const isActiveChip =
+                          showClassStatsPanel && selectedClassKey === entry.key;
+                        return (
+                          <button
+                            key={entry.key}
+                            type="button"
+                            onClick={() => handleClassChipClick(entry.key)}
+                            aria-pressed={isActiveChip}
+                            className={`px-2 py-1 text-xs font-medium rounded-full border transition-colors duration-150 transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500 ${
+                              isActiveChip
+                                ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                : "bg-white text-gray-700 border-gray-300 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-700 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:border-indigo-400 dark:hover:text-indigo-300"
+                            }`}
+                          >
+                            <span className="inline-flex items-center gap-2">
+                              <FiLayers
+                                className={`w-3 h-3 ${
+                                  isActiveChip
+                                    ? "text-white"
+                                    : "text-indigo-600 dark:text-indigo-300"
+                                }`}
+                                aria-hidden="true"
+                              />
+                              <span>{entry.label}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   ) : displayClassNames.length ? (
                     displayClassNames.map((subjectLabel, idx) => {
                       const key = `class-${String(subjectLabel)

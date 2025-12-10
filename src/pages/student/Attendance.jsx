@@ -123,12 +123,12 @@ const StudentAttendance = () => {
         <StudentQRPass courseId={id} />
       </div>
 
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white border-l-4 border-violet-500/60 dark:border-violet-400/60 pl-3">
           Your Attendance Records
         </h2>
       </div>
-      <AttendanceList attendance={attendance} />
+      <AttendanceList attendance={attendance} /> */}
     </div>
   );
 };

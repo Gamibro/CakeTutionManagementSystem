@@ -85,10 +85,10 @@ const TeacherAttendance = () => {
 
       <QRScanner />
 
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+      {/* <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
         Attendance Records
       </h2>
-      <AttendanceList attendance={attendance} schedules={schedules} />
+      <AttendanceList attendance={attendance} schedules={schedules} /> */}
     </div>
   );
 };

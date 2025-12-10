@@ -60,7 +60,7 @@ const RoutesConfig = () => {
       <Routes location={backgroundLocation || location}>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* <Route path="/register" element={<Register />} /> */}
 
         {/* Admin Routes */}
         <Route

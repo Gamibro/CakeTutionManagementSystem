@@ -53,7 +53,7 @@ const StudentClassSchedule = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [detailSchedule, setDetailSchedule] = useState(null);
   const [courses, setCourses] = useState([]);
-  const [filters, setFilters] = useState({ course: "", subject: "", room: "" });
+  const [filters, setFilters] = useState({ course: "", subject: "", room: "", date: "" });
   const [loadError, setLoadError] = useState(null);
 
   const sortSchedules = (items) => {
@@ -141,6 +141,11 @@ const StudentClassSchedule = () => {
           .includes(filters.room.toLowerCase())
       )
         return false;
+      if (
+        filters.date &&
+        !String(s.classDate || "").includes(filters.date)
+      )
+        return false;
       return true;
     });
   }, [schedules, studentCourseIds, filters]);
@@ -204,6 +209,19 @@ const StudentClassSchedule = () => {
             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
+        <div className="flex flex-col">
+          <label className="text-xs font-medium mb-1 text-gray-500 uppercase tracking-wide">
+            Class Date
+          </label>
+          <input
+            type="date"
+            name="date"
+            value={filters.date}
+            onChange={handleInput}
+            placeholder="Search by date"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
         {/* <div className="flex flex-col">
           <label className="text-xs font-medium mb-1 text-gray-500 uppercase tracking-wide">
             Room
@@ -251,6 +269,9 @@ const StudentClassSchedule = () => {
                     </h2>
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {s.classDate && (
+                      <span className="font-medium">{s.classDate} • </span>
+                    )}
                     {dayNames[s.dayOfWeek]} • {formatTime(s.startTime)} –{" "}
                     {formatTime(s.endTime)} • Room {s.roomNumber}{" "}
                     {s.isRecurring && (
@@ -417,7 +438,7 @@ const StudentClassSchedule = () => {
                                 background: gradient,
                                 borderLeft: `4px solid ${primary}`,
                               }}
-                              title={`${s.courseName} • ${
+                              title={`${s.classDate ? s.classDate + ' • ' : ''}${s.courseName} • ${
                                 s.subjectName
                               } • ${formatTime(s.startTime)} - ${formatTime(
                                 s.endTime
@@ -425,6 +446,11 @@ const StudentClassSchedule = () => {
                             >
                               <div className="flex items-center justify-between">
                                 <div>
+                                  {s.classDate && (
+                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">
+                                      {s.classDate}
+                                    </div>
+                                  )}
                                   <div className="truncate text-xs font-semibold text-gray-900 dark:text-gray-100">
                                     {s.courseName || `Course ${s.courseId}`}
                                   </div>
@@ -480,6 +506,12 @@ const StudentClassSchedule = () => {
                   {dayNames[detailSchedule.dayOfWeek]}
                 </div>
               </div>
+              {detailSchedule.classDate && (
+                <div>
+                  <div className="text-xs text-gray-500">Class Date</div>
+                  <div className="font-medium">{detailSchedule.classDate}</div>
+                </div>
+              )}
               {/* <div>
                 <div className="text-xs text-gray-500">Room</div>
                 <div className="font-medium">{detailSchedule.roomNumber}</div>
