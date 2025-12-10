@@ -53,7 +53,12 @@ const StudentClassSchedule = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [detailSchedule, setDetailSchedule] = useState(null);
   const [courses, setCourses] = useState([]);
-  const [filters, setFilters] = useState({ course: "", subject: "", room: "", date: "" });
+  const [filters, setFilters] = useState({
+    course: "",
+    subject: "",
+    room: "",
+    date: "",
+  });
   const [loadError, setLoadError] = useState(null);
 
   const sortSchedules = (items) => {
@@ -141,10 +146,7 @@ const StudentClassSchedule = () => {
           .includes(filters.room.toLowerCase())
       )
         return false;
-      if (
-        filters.date &&
-        !String(s.classDate || "").includes(filters.date)
-      )
+      if (filters.date && !String(s.classDate || "").includes(filters.date))
         return false;
       return true;
     });
@@ -438,7 +440,9 @@ const StudentClassSchedule = () => {
                                 background: gradient,
                                 borderLeft: `4px solid ${primary}`,
                               }}
-                              title={`${s.classDate ? s.classDate + ' • ' : ''}${s.courseName} • ${
+                              title={`${
+                                s.classDate ? s.classDate + " • " : ""
+                              }${s.courseName} • ${
                                 s.subjectName
                               } • ${formatTime(s.startTime)} - ${formatTime(
                                 s.endTime

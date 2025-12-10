@@ -257,8 +257,11 @@ const mapSchedule = (raw) => {
     raw.IsActive ?? raw.isActive ?? raw.active ?? true
   );
   const classDate = raw.ClassDate ?? raw.classDate ?? raw.class_date ?? null;
-  const normalizedClassDate = classDate ? 
-    (classDate.includes('T') ? classDate.split('T')[0] : classDate) : null;
+  const normalizedClassDate = classDate
+    ? classDate.includes("T")
+      ? classDate.split("T")[0]
+      : classDate
+    : null;
 
   const fallbackId = `${
     courseId ?? "course"
@@ -311,6 +314,25 @@ export const getAllClassSchedules = async () => {
     return list.map(mapSchedule).filter(Boolean);
   } catch (error) {
     console.error("Failed to load class schedules via API", error);
+    throw error;
+  }
+};
+
+export const getClassScheduleByDate = async (classDate) => {
+  try {
+    // Format date as YYYY-MM-DD
+    const dateStr =
+      classDate instanceof Date
+        ? classDate.toISOString().split("T")[0]
+        : classDate;
+
+    const response = await axios.get("/ClassSchedules/GetClassScheduleByDate", {
+      params: { ClassDate: dateStr },
+    });
+    const list = extractList(response.data);
+    return list.map(mapSchedule).filter(Boolean);
+  } catch (error) {
+    console.error("Failed to load class schedules by date via API", error);
     throw error;
   }
 };
@@ -407,6 +429,7 @@ export const deleteClassSchedule = async (scheduleId) => {
 
 export default {
   getAllClassSchedules,
+  getClassScheduleByDate,
   getClassScheduleById,
   createClassSchedule,
   updateClassSchedule,

@@ -9,7 +9,7 @@ import {
   getTeacherCourses,
   getTeacherCourseStudents,
 } from "../../services/courseService";
-import { getAllClassSchedules } from "../../services/classScheduleService";
+import { getClassScheduleByDate } from "../../services/classScheduleService";
 import Button from "../common/Button";
 
 const DAY_NAMES = [
@@ -264,7 +264,9 @@ const QRScanner = () => {
 
     const loadSchedules = async () => {
       try {
-        const list = await getAllClassSchedules();
+        // Get current date in YYYY-MM-DD format
+        const currentDate = new Date().toISOString().split("T")[0];
+        const list = await getClassScheduleByDate(currentDate);
         if (cancelled) {
           return;
         }
@@ -357,6 +359,17 @@ const QRScanner = () => {
       const dayLabel = Number.isFinite(schedule?.dayOfWeek)
         ? DAY_NAMES[schedule.dayOfWeek]
         : "";
+
+      // Format the date
+      const classDate = schedule?.classDate || schedule?.ClassDate || "";
+      const dateLabel = classDate
+        ? new Date(classDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "";
+
       const toShortTime = (time) => {
         if (!time) return "";
         return String(time).split(":").slice(0, 2).join(":");
@@ -364,8 +377,8 @@ const QRScanner = () => {
       const startShort = toShortTime(schedule?.startTime);
       const endShort = toShortTime(schedule?.endTime);
       const metaParts = [];
+      if (dateLabel) metaParts.push(dateLabel);
       if (courseLabel) metaParts.push(courseLabel);
-      if (dayLabel) metaParts.push(dayLabel);
       if (startShort && endShort) {
         metaParts.push(`${startShort}-${endShort}`);
       } else if (startShort) {
@@ -1475,11 +1488,17 @@ const QRScanner = () => {
               value={selectedScheduleId}
               onChange={(e) => handleScheduleSelect(e.target.value)}
               disabled={scheduleStatus === "loading"}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
             >
-              <option value="">Select Schedule</option>
+              <option value="" className="text-sm">
+                Select Schedule
+              </option>
               {scheduleOptions.map((option) => (
-                <option key={option.value} value={option.value}>
+                <option
+                  key={option.value}
+                  value={option.value}
+                  className="text-sm py-1"
+                >
                   {option.label}
                 </option>
               ))}

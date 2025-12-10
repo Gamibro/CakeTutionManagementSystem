@@ -718,7 +718,9 @@ const AdminClassSchedule = () => {
                                 background: gradient,
                                 borderLeft: `4px solid ${primary}`,
                               }}
-                              title={`${s.classDate ? s.classDate + ' • ' : ''}${s.courseName} • ${
+                              title={`${
+                                s.classDate ? s.classDate + " • " : ""
+                              }${s.courseName} • ${
                                 s.subjectName
                               } • ${formatTime(s.startTime)} - ${formatTime(
                                 s.endTime
