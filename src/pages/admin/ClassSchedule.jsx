@@ -113,6 +113,35 @@ const AdminClassSchedule = () => {
     return fallback;
   };
 
+  // Utility to expand recurring schedules for next N weeks
+  const expandRecurringSchedules = (items, weeksAhead = 8) => {
+    if (!Array.isArray(items)) return [];
+    const expanded = [];
+    
+    items.forEach((schedule) => {
+      // Add original schedule
+      expanded.push(schedule);
+      
+      // If recurring, generate future weeks
+      if (schedule.isRecurring && schedule.classDate) {
+        const baseDate = new Date(schedule.classDate);
+        
+        for (let week = 1; week <= weeksAhead; week++) {
+          const futureDate = new Date(baseDate);
+          futureDate.setDate(futureDate.getDate() + (week * 7));
+          
+          expanded.push({
+            ...schedule,
+            id: `${schedule.id}-week${week}`,
+            classDate: futureDate.toISOString().split('T')[0],
+          });
+        }
+      }
+    });
+    
+    return expanded;
+  };
+
   const sortSchedules = (items) => {
     if (!Array.isArray(items)) return [];
     const cloned = [...items];
@@ -173,9 +202,8 @@ const AdminClassSchedule = () => {
           getAllSubjects(),
         ]);
         if (!mounted) return;
-        setSchedules(
-          sortSchedules(Array.isArray(scheduleData) ? scheduleData : [])
-        );
+        const expandedScheds = expandRecurringSchedules(Array.isArray(scheduleData) ? scheduleData : []);
+        setSchedules(sortSchedules(expandedScheds));
         setCoursesList(courses || []);
         setSubjectsList(subjects || []);
       } catch (err) {
@@ -198,6 +226,19 @@ const AdminClassSchedule = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formCourseId, formSubjectId, formStartTime, formEndTime, formRoomNumber]);
 
+  // Get the start and end dates of the current week
+  const getCurrentWeekRange = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+    const start = new Date(now);
+    start.setDate(now.getDate() - day); // Go back to Sunday
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6); // Go forward to Saturday
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
+
   const filtered = useMemo(() => {
     return schedules.filter((s) => {
       if (
@@ -219,8 +260,25 @@ const AdminClassSchedule = () => {
         !String(s.roomNumber).toLowerCase().includes(filters.room.toLowerCase())
       )
         return false;
-      if (filters.date && !String(s.classDate || "").includes(filters.date))
-        return false;
+      
+      // Filter by date
+      if (s.classDate) {
+        if (filters.date) {
+          // If date filter is set, show only that specific date
+          if (!String(s.classDate).includes(filters.date)) {
+            return false;
+          }
+        } else {
+          // Otherwise, show current week
+          const weekRange = getCurrentWeekRange();
+          const scheduleDate = new Date(s.classDate);
+          scheduleDate.setHours(0, 0, 0, 0);
+          if (scheduleDate < weekRange.start || scheduleDate > weekRange.end) {
+            return false;
+          }
+        }
+      }
+      
       return true;
     });
   }, [schedules, filters]);

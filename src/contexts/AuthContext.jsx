@@ -18,12 +18,12 @@ export const AuthProvider = ({ children }) => {
     },
   });
 
-  useEffect(() => {
-    const authStatus = !!(user && token);
-    if (isAuthenticated !== authStatus) {
-      setIsAuthenticated(authStatus);
-    }
-  }, [user, token, isAuthenticated]);
+  // useEffect(() => {
+  //   const authStatus = !!(user && token);
+  //   if (isAuthenticated !== authStatus) {
+  //     setIsAuthenticated(authStatus);
+  //   }
+  // }, [user, token, isAuthenticated]);
 
   const login = async (username, password) => {
     try {
