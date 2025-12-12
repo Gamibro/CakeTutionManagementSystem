@@ -970,3 +970,155 @@ export const getCourseAttendance = async (courseId) => {
 
   return [];
 };
+
+export const getAttendanceBySubjectAndDate = async (subjectId, date) => {
+  if (!subjectId || !date) {
+    return [];
+  }
+
+  try {
+    const formattedDate = new Date(date).toISOString().split("T")[0];
+    console.log("Fetching attendance for:", { subjectId, date: formattedDate });
+
+    const response = await axios.get("/GetAtendBySubject", {
+      params: {
+        subjectId: subjectId,
+        date: formattedDate,
+      },
+    });
+
+    console.log("Attendance API response:", response.data);
+
+    // Handle different response structures
+    const rawData = response.data;
+    const dataArray = Array.isArray(rawData)
+      ? rawData
+      : Array.isArray(rawData?.data)
+      ? rawData.data
+      : rawData
+      ? [rawData]
+      : [];
+
+    console.log("Parsed attendance data:", dataArray);
+    return dataArray;
+  } catch (error) {
+    console.error("Failed to fetch attendance by subject and date", error);
+    if (error.response) {
+      console.error("Error response:", error.response.data);
+    }
+    return [];
+  }
+};
+
+export const getAttendanceByScheduleId = async (scheduleId, date) => {
+  if (!scheduleId || !date) {
+    return [];
+  }
+
+  try {
+    const formattedDate = new Date(date).toISOString().split("T")[0];
+    console.log("Fetching attendance for schedule:", {
+      scheduleId,
+      date: formattedDate,
+    });
+
+    const response = await axios.get("/GetAtendBySheduleId", {
+      params: {
+        sheduleid: scheduleId,
+        date: formattedDate,
+      },
+    });
+
+    console.log("Schedule attendance API response:", response.data);
+
+    // Handle different response structures
+    const rawData = response.data;
+    const dataArray = Array.isArray(rawData)
+      ? rawData
+      : Array.isArray(rawData?.data)
+      ? rawData.data
+      : rawData
+      ? [rawData]
+      : [];
+
+    console.log("Parsed schedule attendance data:", dataArray);
+    return dataArray;
+  } catch (error) {
+    console.error("Failed to fetch attendance by schedule and date", error);
+    if (error.response) {
+      console.error("Error response:", error.response.data);
+    }
+    return [];
+  }
+};
+
+// Get attendance by student ID and schedule ID
+export const getAttendanceByStudentAndSchedule = async (
+  scheduleId,
+  studentId
+) => {
+  if (!scheduleId || !studentId) {
+    console.warn("Schedule ID and Student ID are required");
+    return [];
+  }
+
+  try {
+    const response = await axios.get("/GetAtendByStudentId", {
+      params: {
+        sheduleid: scheduleId,
+        studentid: studentId,
+      },
+    });
+
+    const rawData = response.data;
+    const dataArray = Array.isArray(rawData)
+      ? rawData
+      : rawData?.data
+      ? Array.isArray(rawData.data)
+        ? rawData.data
+        : [rawData.data]
+      : [rawData];
+
+    // Transform the API response to match the expected format
+    return dataArray.map((record) => {
+      const scanDate = record.ScanDate ?? record.scanDate;
+      const firstScanTime = record.FirstScanTime ?? record.firstScanTime;
+
+      // Determine status based on scan time (if needed, adjust logic)
+      let status = "Present";
+      if (firstScanTime) {
+        const scanTime = new Date(firstScanTime);
+        const hours = scanTime.getHours();
+        const minutes = scanTime.getMinutes();
+
+        // Example logic: if scanned after 8:15 AM, mark as Late
+        if (hours > 8 || (hours === 8 && minutes > 15)) {
+          status = "Late";
+        }
+      }
+
+      return {
+        id: `${studentId}-${scheduleId}-${scanDate}`,
+        attendanceId: `${studentId}-${scheduleId}-${scanDate}`,
+        studentId,
+        StudentID: studentId,
+        scheduleId,
+        ScheduleID: scheduleId,
+        SessionID: scheduleId,
+        date: firstScanTime || scanDate,
+        Date: firstScanTime || scanDate,
+        scanDate,
+        scanTime: firstScanTime,
+        status,
+        Status: status,
+        raw: record,
+      };
+    });
+  } catch (error) {
+    console.error("Failed to fetch attendance by student and schedule", error);
+    if (error.response) {
+      console.error("Error response:", error.response.data);
+    }
+    return [];
+  }
+};
