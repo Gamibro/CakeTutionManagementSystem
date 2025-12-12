@@ -117,28 +117,28 @@ const AdminClassSchedule = () => {
   const expandRecurringSchedules = (items, weeksAhead = 8) => {
     if (!Array.isArray(items)) return [];
     const expanded = [];
-    
+
     items.forEach((schedule) => {
       // Add original schedule
       expanded.push(schedule);
-      
+
       // If recurring, generate future weeks
       if (schedule.isRecurring && schedule.classDate) {
         const baseDate = new Date(schedule.classDate);
-        
+
         for (let week = 1; week <= weeksAhead; week++) {
           const futureDate = new Date(baseDate);
-          futureDate.setDate(futureDate.getDate() + (week * 7));
-          
+          futureDate.setDate(futureDate.getDate() + week * 7);
+
           expanded.push({
             ...schedule,
             id: `${schedule.id}-week${week}`,
-            classDate: futureDate.toISOString().split('T')[0],
+            classDate: futureDate.toISOString().split("T")[0],
           });
         }
       }
     });
-    
+
     return expanded;
   };
 
@@ -202,7 +202,9 @@ const AdminClassSchedule = () => {
           getAllSubjects(),
         ]);
         if (!mounted) return;
-        const expandedScheds = expandRecurringSchedules(Array.isArray(scheduleData) ? scheduleData : []);
+        const expandedScheds = expandRecurringSchedules(
+          Array.isArray(scheduleData) ? scheduleData : []
+        );
         setSchedules(sortSchedules(expandedScheds));
         setCoursesList(courses || []);
         setSubjectsList(subjects || []);
@@ -260,7 +262,7 @@ const AdminClassSchedule = () => {
         !String(s.roomNumber).toLowerCase().includes(filters.room.toLowerCase())
       )
         return false;
-      
+
       // Filter by date
       if (s.classDate) {
         if (filters.date) {
@@ -278,7 +280,7 @@ const AdminClassSchedule = () => {
           }
         }
       }
-      
+
       return true;
     });
   }, [schedules, filters]);

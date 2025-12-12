@@ -34,6 +34,7 @@ import CoursePickerModal from "../../components/courses/CoursePickerModal";
 import AttendanceList from "../../components/attendance/AttendanceList";
 import { getStudentAttendance } from "../../services/attendanceService";
 import ClassStatsPanel from "../../components/courses/ClassStatsPanel";
+import StudentClassStatsPanel from "../../components/courses/StudentClassStatsPanel";
 import { FiLayers } from "react-icons/fi";
 // No direct CourseCard usage here because admin links differ from teacher view
 
@@ -1565,11 +1566,20 @@ const UserDetailsPage = ({
 
   return (
     <div className="space-y-6">
-      <ClassStatsPanel
-        open={showClassStatsPanel}
-        classInfo={selectedClassInfo}
-        onClose={handleCloseClassStats}
-      />
+      {isStudentUser ? (
+        <StudentClassStatsPanel
+          open={showClassStatsPanel}
+          classInfo={selectedClassInfo}
+          onClose={handleCloseClassStats}
+          studentId={resolvedStudentId}
+        />
+      ) : (
+        <ClassStatsPanel
+          open={showClassStatsPanel}
+          classInfo={selectedClassInfo}
+          onClose={handleCloseClassStats}
+        />
+      )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">

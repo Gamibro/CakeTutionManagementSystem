@@ -74,6 +74,26 @@ const toIsoDate = (value) => {
     : date.toISOString();
 };
 
+/**
+ * Get attendance by student ID and subject ID
+ */
+export const getAttendanceByStudentAndSubject = async (studentId, subjectId) => {
+  const API_BASE = "http://localhost:50447/api";
+  
+  try {
+    const response = await axios.get(
+      `${API_BASE}/GetAtendByStudentAndSubject`,
+      {
+        params: { studentId, subjectId },
+      }
+    );
+    return response.data || [];
+  } catch (error) {
+    console.error("Error fetching attendance by student and subject:", error);
+    throw error;
+  }
+};
+
 const buildAttendanceRecord = (record) => {
   if (!record || typeof record !== "object") {
     return null;

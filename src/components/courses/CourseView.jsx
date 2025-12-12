@@ -29,7 +29,8 @@ import Modal from "../common/Modal2";
 
 import StudentPickerModal from "../common/StudentPickerModal";
 import CourseForm from "./CourseForm";
-import ClassStatsPanel from "./ClassStatsPanel";
+import TeacherClassStatsPanel from "./TeacherClassStatsPanel";
+import StudentClassStatsPanel from "./StudentClassStatsPanel";
 import MaterialForm from "../materials/MaterialForm";
 import QRGenerator from "../attendance/QRGenerator";
 import Loader from "../common/Loader";
@@ -2302,9 +2303,9 @@ const CourseView = () => {
     if (!selectedClassKey || !classStatsEntries.length) {
       return null;
     }
-    return (
-      classStatsEntries.find((entry) => entry.key === selectedClassKey) || null
-    );
+    const info = classStatsEntries.find((entry) => entry.key === selectedClassKey) || null;
+    console.log("CourseView selectedClassInfo:", info);
+    return info;
   }, [selectedClassKey, classStatsEntries]);
 
   const showClassStatsPanel =
@@ -3524,11 +3525,21 @@ const CourseView = () => {
         </div>
       )}
 
-      <ClassStatsPanel
-        open={showClassStatsPanel}
-        classInfo={selectedClassInfo}
-        onClose={handleCloseClassStats}
-      />
+      {/* Conditionally render appropriate ClassStatsPanel based on user role */}
+      {isStudentUser ? (
+        <StudentClassStatsPanel
+          open={showClassStatsPanel}
+          classInfo={selectedClassInfo}
+          onClose={handleCloseClassStats}
+          studentId={studentIdentifierValues[0] || user?.StudentID || user?.studentID || user?.studentId || user?.id}
+        />
+      ) : (
+        <TeacherClassStatsPanel
+          open={showClassStatsPanel}
+          classInfo={selectedClassInfo}
+          onClose={handleCloseClassStats}
+        />
+      )}
 
       {/* Header Section */}
       <div className="mt-2 mb-3 md:mb-5">
