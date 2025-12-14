@@ -24,10 +24,10 @@ const StudentClassStatsPanel = ({ open, classInfo, onClose, studentId }) => {
 
   useEffect(() => {
     const fetchAttendanceData = async () => {
-      console.log("StudentClassStatsPanel useEffect triggered:", { 
-        open, 
-        classInfo, 
-        studentId 
+      console.log("StudentClassStatsPanel useEffect triggered:", {
+        open,
+        classInfo,
+        studentId,
       });
 
       if (!open || !classInfo) {
@@ -35,8 +35,9 @@ const StudentClassStatsPanel = ({ open, classInfo, onClose, studentId }) => {
         return;
       }
 
-      const subjectId = classInfo.subjectId || classInfo.SubjectID || classInfo.subjectID;
-      
+      const subjectId =
+        classInfo.subjectId || classInfo.SubjectID || classInfo.subjectID;
+
       if (!subjectId || !studentId) {
         console.log("Missing required data:", { subjectId, studentId });
         return;
@@ -46,8 +47,10 @@ const StudentClassStatsPanel = ({ open, classInfo, onClose, studentId }) => {
       setError(null);
 
       try {
-        console.log(`Fetching attendance for student ${studentId} and subject ${subjectId}`);
-        
+        console.log(
+          `Fetching attendance for student ${studentId} and subject ${subjectId}`
+        );
+
         const data = await getAttendanceByStudentAndSubject(
           studentId,
           subjectId
@@ -57,15 +60,17 @@ const StudentClassStatsPanel = ({ open, classInfo, onClose, studentId }) => {
 
         if (data && data.length > 0) {
           // Format the data for display
-          const formattedData = data.map(record => ({
-            id: `${record.ScanDate || record.scanDate}-${record.FirstScanTime || record.firstScanTime}`,
+          const formattedData = data.map((record) => ({
+            id: `${record.ScanDate || record.scanDate}-${
+              record.FirstScanTime || record.firstScanTime
+            }`,
             scanDate: record.ScanDate || record.scanDate,
             firstScanTime: record.FirstScanTime || record.firstScanTime,
             statusKey: "present",
             statusLabel: "Present",
             attendanceDate: record.FirstScanTime || record.firstScanTime,
           }));
-          
+
           setAttendanceData(formattedData);
         } else {
           setAttendanceData([]);
@@ -86,11 +91,7 @@ const StudentClassStatsPanel = ({ open, classInfo, onClose, studentId }) => {
     return null;
   }
 
-  const {
-    label,
-    code,
-    latestAttendanceDate,
-  } = classInfo;
+  const { label, code, latestAttendanceDate } = classInfo;
 
   const formattedLatest = latestAttendanceDate
     ? formatDate(latestAttendanceDate)
@@ -98,7 +99,9 @@ const StudentClassStatsPanel = ({ open, classInfo, onClose, studentId }) => {
 
   // Calculate stats from attendance data
   const displayTotal = attendanceData.length;
-  const displayPresent = attendanceData.filter(s => s.statusKey === "present").length;
+  const displayPresent = attendanceData.filter(
+    (s) => s.statusKey === "present"
+  ).length;
   const displayAbsent = 0; // Students only see their present records
 
   return (

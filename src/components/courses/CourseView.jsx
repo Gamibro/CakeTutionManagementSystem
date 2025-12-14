@@ -2303,7 +2303,8 @@ const CourseView = () => {
     if (!selectedClassKey || !classStatsEntries.length) {
       return null;
     }
-    const info = classStatsEntries.find((entry) => entry.key === selectedClassKey) || null;
+    const info =
+      classStatsEntries.find((entry) => entry.key === selectedClassKey) || null;
     console.log("CourseView selectedClassInfo:", info);
     return info;
   }, [selectedClassKey, classStatsEntries]);
@@ -3531,7 +3532,13 @@ const CourseView = () => {
           open={showClassStatsPanel}
           classInfo={selectedClassInfo}
           onClose={handleCloseClassStats}
-          studentId={studentIdentifierValues[0] || user?.StudentID || user?.studentID || user?.studentId || user?.id}
+          studentId={
+            studentIdentifierValues[0] ||
+            user?.StudentID ||
+            user?.studentID ||
+            user?.studentId ||
+            user?.id
+          }
         />
       ) : (
         <TeacherClassStatsPanel
