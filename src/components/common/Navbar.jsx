@@ -105,7 +105,16 @@ const Navbar = () => {
                   <span className="hidden sm:inline-block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {displayName}
                   </span>
-                  <Avatar name={displayName} size="sm" user={user} />
+                  <Avatar
+                    key={`navbar-avatar-${user?.UserID || user?.id}-${
+                      user?.ProfilePictureVersion ||
+                      user?.profilePictureVersion ||
+                      ""
+                    }`}
+                    name={displayName}
+                    size="sm"
+                    user={user}
+                  />
                 </div>
               }
               items={userNavigation}

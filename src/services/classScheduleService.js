@@ -253,6 +253,15 @@ const mapSchedule = (raw) => {
   const isRecurring = toBoolean(
     raw.IsRecurring ?? raw.isRecurring ?? raw.recurring
   );
+  const isActive = toBoolean(
+    raw.IsActive ?? raw.isActive ?? raw.active ?? true
+  );
+  const classDate = raw.ClassDate ?? raw.classDate ?? raw.class_date ?? null;
+  const normalizedClassDate = classDate
+    ? classDate.includes("T")
+      ? classDate.split("T")[0]
+      : classDate
+    : null;
 
   const fallbackId = `${
     courseId ?? "course"
@@ -268,6 +277,8 @@ const mapSchedule = (raw) => {
     endTime,
     roomNumber: roomNumber ?? "",
     isRecurring,
+    isActive,
+    classDate: normalizedClassDate,
     courseName,
     subjectName,
     raw,
@@ -275,6 +286,7 @@ const mapSchedule = (raw) => {
 };
 
 const serializeSchedule = (input) => {
+  const classDate = input?.classDate ?? input?.ClassDate ?? null;
   const payload = {
     CourseID: toNumberOrNull(input?.courseId ?? input?.CourseID),
     SubjectID: toNumberOrNull(input?.subjectId ?? input?.SubjectID),
@@ -283,11 +295,14 @@ const serializeSchedule = (input) => {
     EndTime: toApiTime(input?.endTime ?? input?.EndTime),
     RoomNumber: input?.roomNumber ?? input?.RoomNumber ?? "",
     IsRecurring: toBoolean(input?.isRecurring ?? input?.IsRecurring),
+    IsActive: toBoolean(input?.isActive ?? input?.IsActive ?? true),
+    ClassDate: classDate || null,
   };
 
   if (payload.SubjectID === null) delete payload.SubjectID;
   if (payload.StartTime === null) delete payload.StartTime;
   if (payload.EndTime === null) delete payload.EndTime;
+  if (payload.ClassDate === null) delete payload.ClassDate;
 
   return payload;
 };
@@ -299,6 +314,25 @@ export const getAllClassSchedules = async () => {
     return list.map(mapSchedule).filter(Boolean);
   } catch (error) {
     console.error("Failed to load class schedules via API", error);
+    throw error;
+  }
+};
+
+export const getClassScheduleByDate = async (classDate) => {
+  try {
+    // Format date as YYYY-MM-DD
+    const dateStr =
+      classDate instanceof Date
+        ? classDate.toISOString().split("T")[0]
+        : classDate;
+
+    const response = await axios.get("/ClassSchedules/GetClassScheduleByDate", {
+      params: { ClassDate: dateStr },
+    });
+    const list = extractList(response.data);
+    return list.map(mapSchedule).filter(Boolean);
+  } catch (error) {
+    console.error("Failed to load class schedules by date via API", error);
     throw error;
   }
 };
@@ -395,6 +429,7 @@ export const deleteClassSchedule = async (scheduleId) => {
 
 export default {
   getAllClassSchedules,
+  getClassScheduleByDate,
   getClassScheduleById,
   createClassSchedule,
   updateClassSchedule,

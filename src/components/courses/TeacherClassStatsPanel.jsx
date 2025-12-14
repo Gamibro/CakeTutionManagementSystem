@@ -20,7 +20,7 @@ const getStatusBadgeClasses = (statusKey) => {
   }
 };
 
-const ClassStatsPanel = ({ open, classInfo, onClose }) => {
+const TeacherClassStatsPanel = ({ open, classInfo, onClose }) => {
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -647,4 +647,4 @@ const ClassStatsPanel = ({ open, classInfo, onClose }) => {
   );
 };
 
-export default ClassStatsPanel;
+export default TeacherClassStatsPanel;

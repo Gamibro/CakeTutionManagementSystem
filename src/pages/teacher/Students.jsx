@@ -16,7 +16,10 @@ import {
   deleteUser,
   getUserById,
 } from "../../services/userService";
-import { uploadProfilePhoto } from "../../services/userService";
+import {
+  uploadProfilePhoto,
+  updateProfilePhoto,
+} from "../../services/userService";
 import {
   createStudent,
   updateStudent,
@@ -1063,8 +1066,9 @@ const TeacherStudents = () => {
       }
     }
 
-    const [subjects] = await Promise.all([
+    const [subjects, schedules] = await Promise.all([
       ensureSubjectsLoaded(),
+      // ensureSchedulesLoaded(),
     ]);
 
     const options = deriveClassOptions(
@@ -2009,7 +2013,7 @@ const handleClassPickerProceed = async (selectedSubjectIds) => {
           UserTypeID: 3,
         });
 
-        // If a new profile photo was supplied (data URL), upload it
+        // If a new profile photo was supplied (data URL), upload it using UPDATE endpoint
         const photoToUpload =
           formData?.ProfilePicture || formData?.profilepicture || null;
         if (
@@ -2018,7 +2022,7 @@ const handleClassPickerProceed = async (selectedSubjectIds) => {
           photoToUpload.startsWith("data:")
         ) {
           try {
-            const uploadResult = await uploadProfilePhoto(uid, photoToUpload);
+            const uploadResult = await updateProfilePhoto(uid, photoToUpload);
             const uploadedPath = uploadResult?.filePath;
             const cacheBuster = uploadResult?.cacheBuster;
             if (uploadedPath) {
@@ -2172,7 +2176,6 @@ const handleClassPickerProceed = async (selectedSubjectIds) => {
 
             if (!desiredSet.has(courseIdStr)) {
               if (enrollment.EnrollmentID != null) {
-
                 try {
                   const numericCourseId = toApiId(courseIdStr);
                   if (teacherId && isCourseInScope(courseIdStr)) {
@@ -2343,6 +2346,15 @@ const handleClassPickerProceed = async (selectedSubjectIds) => {
             "User updated, but failed to update student details"
         );
       }
+
+      // Update students list with the latest data from editUser (which has profile pic updates from step 1)
+      setStudents((prev) =>
+        prev.map((s) => {
+          const currentUserId = s.UserID || s.id;
+          const updatedUserId = editUser.UserID || editUser.id;
+          return currentUserId === updatedUserId ? editUser : s;
+        })
+      );
 
       await refreshStudents();
       setEditCourseClassAssignments({});

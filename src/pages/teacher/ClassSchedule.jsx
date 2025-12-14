@@ -53,8 +53,42 @@ const TeacherClassSchedule = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [detailSchedule, setDetailSchedule] = useState(null);
   const [courses, setCourses] = useState([]);
-  const [filters, setFilters] = useState({ course: "", subject: "", room: "" });
+  const [filters, setFilters] = useState({
+    course: "",
+    subject: "",
+    room: "",
+    date: "",
+  });
   const [loadError, setLoadError] = useState(null);
+
+  // Utility to expand recurring schedules for next N weeks
+  const expandRecurringSchedules = (items, weeksAhead = 8) => {
+    if (!Array.isArray(items)) return [];
+    const expanded = [];
+    
+    items.forEach((schedule) => {
+      // Add original schedule
+      expanded.push(schedule);
+      
+      // If recurring, generate future weeks
+      if (schedule.isRecurring && schedule.classDate) {
+        const baseDate = new Date(schedule.classDate);
+        
+        for (let week = 1; week <= weeksAhead; week++) {
+          const futureDate = new Date(baseDate);
+          futureDate.setDate(futureDate.getDate() + (week * 7));
+          
+          expanded.push({
+            ...schedule,
+            id: `${schedule.id}-week${week}`,
+            classDate: futureDate.toISOString().split('T')[0],
+          });
+        }
+      }
+    });
+    
+    return expanded;
+  };
 
   const sortSchedules = (items) => {
     if (!Array.isArray(items)) return [];
@@ -88,7 +122,8 @@ const TeacherClassSchedule = () => {
           getTeacherCourses(teacherId),
         ]);
         if (!mounted) return;
-        setSchedules(sortSchedules(Array.isArray(scheds) ? scheds : []));
+        const expandedScheds = expandRecurringSchedules(Array.isArray(scheds) ? scheds : []);
+        setSchedules(sortSchedules(expandedScheds));
         setCourses(Array.isArray(teacherCourses) ? teacherCourses : []);
       } catch (err) {
         if (!mounted) return;
@@ -107,6 +142,19 @@ const TeacherClassSchedule = () => {
   const teacherCourseIds = useMemo(() => {
     return (courses || []).map((c) => String(c.id ?? c.CourseID ?? c.courseId));
   }, [courses]);
+
+  // Get the start and end dates of the current week
+  const getCurrentWeekRange = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+    const start = new Date(now);
+    start.setDate(now.getDate() - day); // Go back to Sunday
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6); // Go forward to Saturday
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
 
   const filtered = useMemo(() => {
     // while we're loading courses/schedules, avoid showing anything
@@ -144,6 +192,25 @@ const TeacherClassSchedule = () => {
           .includes(filters.room.toLowerCase())
       )
         return false;
+      
+      // Filter by date
+      if (s.classDate) {
+        if (filters.date) {
+          // If date filter is set, show only that specific date
+          if (!String(s.classDate).includes(filters.date)) {
+            return false;
+          }
+        } else {
+          // Otherwise, show current week
+          const weekRange = getCurrentWeekRange();
+          const scheduleDate = new Date(s.classDate);
+          scheduleDate.setHours(0, 0, 0, 0);
+          if (scheduleDate < weekRange.start || scheduleDate > weekRange.end) {
+            return false;
+          }
+        }
+      }
+      
       return true;
     });
   }, [schedules, teacherCourseIds, filters, loading]);
@@ -212,6 +279,19 @@ const TeacherClassSchedule = () => {
             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
+        <div className="flex flex-col">
+          <label className="text-xs font-medium mb-1 text-gray-500 uppercase tracking-wide">
+            Class Date
+          </label>
+          <input
+            type="date"
+            name="date"
+            value={filters.date}
+            onChange={handleInput}
+            placeholder="Search by date"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
         {/* <div className="flex flex-col">
           <label className="text-xs font-medium mb-1 text-gray-500 uppercase tracking-wide">
             Room
@@ -259,6 +339,9 @@ const TeacherClassSchedule = () => {
                     </h2>
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {s.classDate && (
+                      <span className="font-medium">{s.classDate} • </span>
+                    )}
                     {dayNames[s.dayOfWeek]} • {formatTime(s.startTime)} –{" "}
                     {formatTime(s.endTime)} • Room {s.roomNumber}
                     {s.isRecurring && (
@@ -428,7 +511,9 @@ const TeacherClassSchedule = () => {
                                 background: gradient,
                                 borderLeft: `4px solid ${primary}`,
                               }}
-                              title={`${s.courseName} • ${
+                              title={`${
+                                s.classDate ? s.classDate + " • " : ""
+                              }${s.courseName} • ${
                                 s.subjectName
                               } • ${formatTime(s.startTime)} - ${formatTime(
                                 s.endTime
@@ -436,6 +521,11 @@ const TeacherClassSchedule = () => {
                             >
                               <div className="flex items-center justify-between">
                                 <div>
+                                  {s.classDate && (
+                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">
+                                      {s.classDate}
+                                    </div>
+                                  )}
                                   <div className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">
                                     {s.courseName || `Course ${s.courseId}`}
                                   </div>
@@ -491,6 +581,12 @@ const TeacherClassSchedule = () => {
                   {dayNames[detailSchedule.dayOfWeek]}
                 </div>
               </div>
+              {detailSchedule.classDate && (
+                <div>
+                  <div className="text-xs text-gray-500">Class Date</div>
+                  <div className="font-medium">{detailSchedule.classDate}</div>
+                </div>
+              )}
               {/* <div>
                 <div className="text-xs text-gray-500">Room</div>
                 <div className="font-medium">{detailSchedule.roomNumber}</div>
