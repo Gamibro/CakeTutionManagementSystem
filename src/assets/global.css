@@ -1,0 +1,439 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-200 dark:bg-gray-700;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 dark:bg-gray-500 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500 dark:bg-gray-400;
+}
+
+/* React Transition Group animations */
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+/* === Modern animations and utility classes === */
+@layer utilities {
+  /* Base transition */
+  .transition-base {
+    transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Hover lift for cards and tiles */
+  .hover-lift {
+    @apply transition-transform duration-300 will-change-transform;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Soft elevated shadow */
+  .soft-shadow {
+    box-shadow: 0 6px 20px -6px rgb(0 0 0 / 0.15);
+  }
+  .soft-shadow-md {
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.18);
+  }
+
+  /* Glass surface (nice for navbars) */
+  .glass-surface {
+    /* soft translucent gradient with blur and subtle border */
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 255, 255, 0.48)
+    );
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    border-radius: 12px;
+    color: inherit;
+  }
+
+  /* Dark mode variation for a deeper glass effect */
+  .dark .glass-surface {
+    background: linear-gradient(
+      135deg,
+      rgba(17, 24, 39, 0.6),
+      rgba(17, 24, 39, 0.45)
+    );
+    -webkit-backdrop-filter: blur(8px) saturate(115%);
+    backdrop-filter: blur(8px) saturate(115%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+  }
+
+  /* Keyframes */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes drop-in {
+    0% {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* Animation helpers */
+  .fade-in {
+    animation: fade-in 400ms ease-out both;
+  }
+  .fade-in-up {
+    animation: fade-in-up 450ms ease-out both;
+  }
+  .scale-in {
+    animation: scale-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .drop-in {
+    animation: drop-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  /* Page enter (apply to page main wrappers) */
+  .page-enter {
+    animation: fade-in-up 420ms ease-out both;
+  }
+
+  /* Animated card appearance */
+  .animated-card {
+    animation: fade-in-up 380ms ease-out both;
+  }
+
+  /* Table row subtle hover and entry */
+  .table-animated tbody tr {
+    transition: background-color 180ms ease, transform 180ms ease;
+    animation: fade-in 300ms ease both;
+  }
+  .table-animated tbody tr:hover {
+    @apply bg-gray-50 dark:bg-gray-700;
+  }
+
+  /* Button ripple (CSS-only) */
+  .btn-ripple {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .btn-ripple::after {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(
+        circle,
+        rgb(255 255 255 / 0.45) 10%,
+        transparent 11%
+      )
+      center/10px 10px no-repeat;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 600ms ease, width 600ms ease, height 600ms ease;
+    pointer-events: none;
+  }
+  .btn-ripple:active::after {
+    opacity: 1;
+    width: 250px;
+    height: 250px;
+    transition: 0s;
+  }
+
+  /* Subtle shine on hover for primary buttons */
+  .shine-on-hover {
+    background-image: linear-gradient(
+      120deg,
+      transparent 0%,
+      transparent 40%,
+      rgb(255 255 255 / 0.25) 50%,
+      transparent 60%,
+      transparent 100%
+    );
+    background-size: 220% 100%;
+    transition: background-position 0.6s ease;
+  }
+  .shine-on-hover:hover {
+    background-position: 100% 0;
+  }
+
+  /* Stagger helper: apply to a container to stagger children */
+  .stagger-children > * {
+    animation: fade-in-up 420ms ease-out both;
+  }
+  .stagger-children > *:nth-child(1) {
+    animation-delay: 40ms;
+  }
+  .stagger-children > *:nth-child(2) {
+    animation-delay: 80ms;
+  }
+  .stagger-children > *:nth-child(3) {
+    animation-delay: 120ms;
+  }
+  .stagger-children > *:nth-child(4) {
+    animation-delay: 160ms;
+  }
+  .stagger-children > *:nth-child(5) {
+    animation-delay: 200ms;
+  }
+  .stagger-children > *:nth-child(6) {
+    animation-delay: 240ms;
+  }
+  .stagger-children > *:nth-child(7) {
+    animation-delay: 280ms;
+  }
+  .stagger-children > *:nth-child(8) {
+    animation-delay: 320ms;
+  }
+
+  /* Admin background subtle gradient shift */
+  @keyframes gradient-shift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .admin-bg {
+    background: linear-gradient(
+      120deg,
+      rgba(99, 102, 241, 0.06),
+      rgba(16, 185, 129, 0.04),
+      rgba(99, 102, 241, 0.03)
+    );
+    background-size: 300% 300%;
+    animation: gradient-shift 12s ease infinite;
+  }
+
+  /* Sidebar link indicator */
+  .nav-indicator {
+    width: 4px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #6366f1, #10b981);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.12);
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  /* Variants for different user types */
+  .nav-indicator-admin {
+    background: linear-gradient(180deg, #6366f1, #10b981);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+  }
+  .nav-indicator-teacher {
+    background: linear-gradient(180deg, #06b6d4, #8b5cf6);
+    box-shadow: 0 8px 20px rgba(6, 182, 212, 0.1);
+  }
+  .nav-indicator-student {
+    background: linear-gradient(180deg, #f59e0b, #f97316);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.09);
+  }
+
+  /* Student themed subtle background */
+  .student-bg {
+    background: linear-gradient(
+      120deg,
+      rgba(99, 102, 241, 0.03),
+      rgba(245, 158, 11, 0.03) 40%,
+      rgba(99, 102, 241, 0.02)
+    );
+    background-size: 220% 220%;
+    animation: gradient-shift 14s ease-in-out infinite;
+  }
+
+  /* Small floating particle for student pages */
+  .student-particle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(249, 115, 22, 0.12);
+    box-shadow: 0 8px 18px rgba(249, 115, 22, 0.06);
+    animation: floaty 6s ease-in-out infinite;
+  }
+
+  @keyframes floaty {
+    0% {
+      transform: translateY(0) translateX(0) scale(1);
+      opacity: 0.9;
+    }
+    50% {
+      transform: translateY(-18px) translateX(6px) scale(1.06);
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateY(0) translateX(0) scale(1);
+      opacity: 0.9;
+    }
+  }
+
+  /* Icon hover micro animation */
+  .icon-pop {
+    transition: transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1), color 220ms;
+  }
+  .icon-pop:hover {
+    transform: translateY(-3px) scale(1.06);
+  }
+
+  .safe-area-b {
+    padding-bottom: 1rem;
+  }
+
+  @supports (padding: env(safe-area-inset-bottom)) {
+    .safe-area-b {
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+  }
+
+  /* Responsive data table helper */
+  .responsive-table {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-bottom: 0.5rem;
+  }
+
+  @screen sm {
+    .responsive-table {
+      margin-left: 0;
+      margin-right: 0;
+      padding-bottom: 0;
+    }
+  }
+
+  .responsive-table table {
+    width: 100%;
+  }
+
+  .responsive-table::-webkit-scrollbar {
+    height: 6px;
+  }
+  .responsive-table::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  }
+
+  @media (max-width: 639px) {
+    .responsive-table table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .responsive-table table tbody,
+    .responsive-table table tr,
+    .responsive-table table td {
+      display: block;
+      width: 100%;
+    }
+
+    .responsive-table table tbody {
+      @apply space-y-4;
+    }
+
+    .responsive-table table tbody tr {
+      @apply rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 shadow-sm;
+    }
+
+    .responsive-table table tbody tr + tr {
+      @apply mt-2;
+    }
+
+    .responsive-table table tbody td {
+      @apply flex items-start justify-between gap-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .responsive-table table tbody td:last-child {
+      @apply border-b-0;
+    }
+
+    .responsive-table table tbody td::before {
+      content: attr(data-header);
+      @apply font-medium text-gray-500 dark:text-gray-400 pr-4;
+      flex-basis: 40%;
+      max-width: 12rem;
+    }
+  }
+}
